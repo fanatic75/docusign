@@ -30,6 +30,8 @@ const docusign = require('docusign-esign')
   , basePath = 'https://demo.docusign.net/restapi'
   , express = require('express')
   , envir = process.env
+  , bodyParser = require("body-parser");
+
   ;
 
 async function sendEnvelopeController(req, res) {
@@ -38,15 +40,13 @@ async function sendEnvelopeController(req, res) {
   // or environment variables.
 
   // Obtain an OAuth token from https://developers.hqtest.tst/oauth-token-generator
-  const accessToken = envir.ACCESS_TOKEN || qp.ACCESS_TOKEN || '{ACCESS_TOKEN}';
+  const accessToken = req.body.auth;
 
   // Obtain your accountId from demo.docusign.com -- the account id is shown in the drop down on the
   // upper right corner of the screen by your picture or the default picture. 
-  const accountId = envir.ACCOUNT_ID || qp.ACCOUNT_ID || '{ACCOUNT_ID}';
+  const accountId = req.body.accountId;
 
-  // Recipient Information:
-  const signerName = envir.USER_FULLNAME || qp.USER_FULLNAME || '{USER_FULLNAME}';
-  const signerEmail = envir.USER_EMAIL || qp.USER_EMAIL || '{USER_EMAIL}';
+  const groupId = req.body.groupId;
 
   // The document you wish to send. Path is relative to the root directory of this repo.
   const fileName = 'file.pdf';
@@ -69,8 +69,8 @@ async function sendEnvelopeController(req, res) {
   // Start with the request object
   const envDef = new docusign.EnvelopeDefinition();
   //Set the Email Subject line and email message
-  envDef.emailSubject = 'Please sign this document sent from the Nintex Group.';
-  envDef.emailBlurb = 'Please sign this document sent from the Nintex Group.'
+  envDef.emailSubject = req.body.emailSubject.toString();
+  envDef.emailBlurb = req.body.emailContent.toString();
 
   // Read the file from the document and convert it to a Base64String
   const pdfBytes = fs.readFileSync(path.resolve(__dirname, fileName))
@@ -87,7 +87,7 @@ async function sendEnvelopeController(req, res) {
   envDef.documents = [doc];
 
   // Create the signer object with the previously provided name / email address
-  const signer = docusign.Signer.constructFromObject({ signingGroupId: envir.GROUP_ID, routingOrder: '1', recipientId: '1' });
+  const signer = docusign.Signer.constructFromObject({ signingGroupId: groupId, routingOrder: '1', recipientId: '1' });
 
   // Create the signHere tab to be placed on the envelope
   const signHere = docusign.SignHere.constructFromObject({
@@ -256,9 +256,10 @@ function downloadFile(sendEnvelopeController, request, respond) {
 // The mainline
 const port = process.env.PORT || 3000
   , app = express()
-
-    .get("/api/", (req, res) => res.json({ "api": "just an api" }))
-    .get('/api/' + envir.GROUP_ID, (req, res) => {
+    .use(bodyParser.urlencoded({extended:false}))
+    .use(bodyParser.json())
+    .post("/api/kjwjefwefef",(req,res)=>{
+      
       downloadFile(sendEnvelopeController, req, res);
 
     })
